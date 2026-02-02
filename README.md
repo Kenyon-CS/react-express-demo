@@ -1,148 +1,87 @@
-# React + Express Demo (COMP318)
+# React + Express Demo (COMP318) — Build + Single Port (41xx)
 
-A minimal full‑stack example for introducing **React fundamentals** and **frontend–backend integration**.
+You’re right to insist on a **build step**. Browsers cannot run `.jsx` directly.
+This version uses **Vite** to compile React/JSX into normal JavaScript in `client/dist/`,
+and then **Express serves the built frontend + the API on one port** in the **41xx range**.
 
-This project is intentionally small and readable so you can focus on the core ideas:
+## What this demonstrates
+- Components as functions returning JSX
+- Props (parent → child)
+- State (`useState`)
+- Effects (`useEffect`) for fetching data
+- Events (`onChange`, `onClick`)
+- Frontend ↔ backend integration via JSON API (`/api/users`)
 
-- **React components** are JavaScript functions that return UI (JSX)
-- **Props** pass data from parent → child components
-- **State** (`useState`) stores UI data that changes over time
-- **Effects** (`useEffect`) fetch data from a backend API when the page loads
-- **Events** (e.g., `onClick`, `onChange`) update state and trigger re-renders
-- **Express** provides a JSON API (`/api/users`) that the React frontend calls with `fetch`
+## Why single-port matters on 10.192.145.170
+On a shared host, `3000` conflicts. Here the **UI and API share the same 41xx port**:
+- UI:  `http://10.192.145.170:41xx/`
+- API: `http://10.192.145.170:41xx/api/users`
 
-> Note: The backend uses an in‑memory array instead of a database to keep the demo focused.
-> In later labs, you can replace the in-memory array with MariaDB queries.
-
----
-
-## Project Structure
-
-```
-react-express-demo/
-├── server/
-│   ├── package.json
-│   └── index.js        # Express API (GET/POST /api/users)
-└── client/
-    ├── index.html
-    ├── package.json
-    └── src/
-        ├── main.jsx
-        └── App.jsx     # React components, props, state, events, fetch
-```
+The React app calls the API using **relative URLs** (`/api/users`), so there is **no hard-coded localhost**.
 
 ---
 
-## Prerequisites
+## Setup & Run (recommended commands)
 
-- Node.js 18+ (Node 20+ recommended)
-- npm (comes with Node)
+From the project root:
 
-Check versions:
-
+### 1) Install dependencies (one time)
 ```bash
-node -v
-npm -v
+npm run install-all
 ```
+
+### 2) Build the React client
+```bash
+npm run build
+```
+
+### 3) Start the Express server on your assigned port
+```bash
+PORT=4123 npm run start
+```
+
+Now open:
+- `http://10.192.145.170:4123/`
 
 ---
 
-## How to Run
-
-You will run **two processes** in two terminals:
-
-- **Terminal 1:** Express backend API (port **3001**)
-- **Terminal 2:** React frontend (served on port **3000**)
-
-### 1) Start the backend (Express)
-
-```bash
-cd server
-npm install
-npm start
-```
-
-You should see something like:
-
-```
-API running on http://localhost:3001
-```
-
-Test it with curl:
-
-```bash
-curl http://localhost:3001/api/users
-```
-
----
-
-### 2) Start the frontend (React)
-
-Open a second terminal:
+## Alternative (explicit commands)
+If you don’t want the root scripts:
 
 ```bash
 cd client
-npm start
+npm install
+npm run build
+
+cd ../server
+npm install
+PORT=4123 npm start
 ```
 
-This uses `npx serve` to host the frontend. Open:
-
-- http://localhost:3000
-
 ---
 
-## What to Try
-
-### Add a user
-1. Type a name in the input box
-2. Click **Add User**
-3. The UI updates immediately (React state changes → re-render)
-4. The new user is also stored on the backend (in memory)
-
-### Refresh the page
-Refreshing triggers the frontend to fetch `/api/users` again and rebuild its UI from the returned JSON.
-
----
-
-## Backend API
-
-The Express server implements:
-
-### GET `/api/users`
-Returns all users as JSON.
-
-### POST `/api/users`
-Adds a user and returns the new user object.
-
-Example POST:
-
+## Test the API
 ```bash
-curl -X POST http://localhost:3001/api/users   -H "Content-Type: application/json"   -d '{"name":"Dana"}'
+curl http://10.192.145.170:4123/api/users
+```
+
+Add a user:
+```bash
+curl -X POST http://10.192.145.170:4123/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Dana"}'
 ```
 
 ---
 
-## Common Issues / Fixes
+## Common failure modes
 
-### “CORS” errors
-This demo enables CORS in the server using the `cors` package. If you remove it,
-the browser may block requests to port 3001.
+**“ERROR: client/dist/index.html not found”**
+- You forgot to run the client build step (`npm run build`).
 
-### Port already in use
-If 3000 or 3001 are taken, stop the other process or change the ports in:
-- `server/index.js` (PORT)
-- `client/src/App.jsx` (fetch URL)
-
----
-
-## Next Steps (Optional Extensions for COMP318)
-
-- Replace the in‑memory `users` array with MariaDB:
-  - `GET /api/users` → `SELECT ...`
-  - `POST /api/users` → `INSERT ...`
-- Add DELETE `/api/users/:id`
-- Add loading + error states in React
-- Introduce React Router for multiple pages
+**Blank page / 404 at /**  
+- You started the server from some other folder or copied only the `server/` directory.
+  The server expects `../client/dist` relative to `server/index.js`.
 
 ---
 
