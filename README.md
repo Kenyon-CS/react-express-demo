@@ -1,4 +1,4 @@
-# React + Express Demo (COMP318)
+# React + Express Demo (COMP318) — Single Port (41xx)
 
 A minimal full‑stack example for introducing **React fundamentals** and **frontend–backend integration**.
 
@@ -7,7 +7,7 @@ This project is intentionally small and readable so you can focus on the core id
 - **React components** are JavaScript functions that return UI (JSX)
 - **Props** pass data from parent → child components
 - **State** (`useState`) stores UI data that changes over time
-- **Effects** (`useEffect`) fetch data from a backend API when the page loads
+- **Effects** (`useEffect`) fetch data from the backend API when the page loads
 - **Events** (e.g., `onClick`, `onChange`) update state and trigger re-renders
 - **Express** provides a JSON API (`/api/users`) that the React frontend calls with `fetch`
 
@@ -16,16 +16,34 @@ This project is intentionally small and readable so you can focus on the core id
 
 ---
 
+## Why “Single Port” on a Shared Linux Host (10.192.145.170)
+
+On a shared machine, **the frontend port is also a shared resource**.
+
+- If everyone tries to run a separate frontend dev server on **3000**, only one person can use it.
+- Same for a backend on **3001**.
+
+To avoid that, this demo runs the **UI and API on one port** in the **41xx range**:
+
+- UI: `http://10.192.145.170:41xx/`
+- API: `http://10.192.145.170:41xx/api/users`
+
+This mirrors real deployments:
+- one server port exposed to the world
+- static frontend served by the backend
+- API mounted under `/api/...`
+
+---
+
 ## Project Structure
 
 ```
-react-express-demo/
+react-express-demo-singleport/
 ├── server/
 │   ├── package.json
-│   └── index.js        # Express API (GET/POST /api/users)
+│   └── index.js        # Express API + serves the React UI (static files)
 └── client/
     ├── index.html
-    ├── package.json
     └── src/
         ├── main.jsx
         └── App.jsx     # React components, props, state, events, fetch
@@ -38,7 +56,7 @@ react-express-demo/
 - Node.js 18+ (Node 20+ recommended)
 - npm (comes with Node)
 
-Check versions:
+Check:
 
 ```bash
 node -v
@@ -47,47 +65,28 @@ npm -v
 
 ---
 
-## How to Run
+## How to Run (Recommended on the shared host)
 
-You will run **two processes** in two terminals:
+### 1) Start the server on a unique port in the 41xx range
 
-- **Terminal 1:** Express backend API (port **3001**)
-- **Terminal 2:** React frontend (served on port **3000**)
-
-### 1) Start the backend (Express)
+Pick a port assigned to you, e.g. **4123**:
 
 ```bash
 cd server
 npm install
-npm start
+PORT=4123 npm start
 ```
 
-You should see something like:
+You should see output indicating the UI and API URLs.
 
-```
-API running on http://localhost:3001
-```
+### 2) Open the UI in your browser
 
-Test it with curl:
+Visit:
 
-```bash
-curl http://localhost:3001/api/users
-```
+- `http://10.192.145.170:4123/`
 
----
-
-### 2) Start the frontend (React)
-
-Open a second terminal:
-
-```bash
-cd client
-npm start
-```
-
-This uses `npx serve` to host the frontend. Open:
-
-- http://localhost:3000
+The React frontend will call the API using a **relative URL** (`/api/users`),
+so you do **not** need to edit client code to match ports.
 
 ---
 
@@ -114,24 +113,25 @@ Returns all users as JSON.
 ### POST `/api/users`
 Adds a user and returns the new user object.
 
-Example POST:
+Example POST (replace PORT):
 
 ```bash
-curl -X POST http://localhost:3001/api/users   -H "Content-Type: application/json"   -d '{"name":"Dana"}'
+curl -X POST http://10.192.145.170:4123/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Dana"}'
 ```
 
 ---
 
 ## Common Issues / Fixes
 
-### “CORS” errors
-This demo enables CORS in the server using the `cors` package. If you remove it,
-the browser may block requests to port 3001.
-
 ### Port already in use
-If 3000 or 3001 are taken, stop the other process or change the ports in:
-- `server/index.js` (PORT)
-- `client/src/App.jsx` (fetch URL)
+Pick a different port in the 41xx range.
+
+### Not reachable from your laptop
+- Make sure you are on the right network/VPN
+- Confirm your chosen port is allowed through the host firewall
+- The server binds to `0.0.0.0` so it should be reachable if networking allows it
 
 ---
 
