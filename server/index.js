@@ -23,7 +23,7 @@ app.post('/api/users', (req, res) => {
   res.json(user);
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 4101;
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
 });
